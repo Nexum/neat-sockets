@@ -1,12 +1,13 @@
 "use strict";
 
 // @IMPORTS
-var Application = require("neat-base").Application;
-var Module = require("neat-base").Module;
-var socketIo = require("socket.io");
-var socketRedis = require("socket.io-redis");
-var sharedsession = require("express-socket.io-session");
-var Promise = require("bluebird");
+const Application = require("neat-base").Application;
+const Module = require("neat-base").Module;
+const socketIo = require("socket.io");
+const socketRedis = require("socket.io-redis");
+const sharedsession = require("express-socket.io-session");
+const Promise = require("bluebird");
+const redis = require('redis');
 
 module.exports = class Sockets extends Module {
 
@@ -20,8 +21,23 @@ module.exports = class Sockets extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
             this.io = socketIo();
+
             if (this.config.store) {
-                this.io.adapter(socketRedis(this.config.store));
+
+                if (this.config.store.password) {
+                    let pub = redis(this.config.store.port || 6379, this.config.store.host, {
+                        auth_pass: this.config.store.password
+                    });
+                    let sub = redis(this.config.store.port || 6379, this.config.store.host, {
+                        auth_pass: this.config.store.password
+                    });
+                    this.io.adapter(socketRedis({
+                        pubClient: pub,
+                        subClient: sub
+                    }));
+                } else {
+                    this.io.adapter(socketRedis(this.config.store));
+                }
             }
             resolve(this);
         });
