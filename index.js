@@ -4,6 +4,7 @@
 var Application = require("neat-base").Application;
 var Module = require("neat-base").Module;
 var socketIo = require("socket.io");
+var socketRedis = require("socket.io-redis");
 var sharedsession = require("express-socket.io-session");
 var Promise = require("bluebird");
 
@@ -19,6 +20,9 @@ module.exports = class Sockets extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
             this.io = socketIo();
+            if (this.config.store) {
+                this.io.adapter(socketRedis(this.config.store));
+            }
             resolve(this);
         });
     }
