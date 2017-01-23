@@ -25,12 +25,8 @@ module.exports = class Sockets extends Module {
             if (this.config.store) {
 
                 if (this.config.store.password) {
-                    let pub = redis(this.config.store.port || 6379, this.config.store.host, {
-                        auth_pass: this.config.store.password
-                    });
-                    let sub = redis(this.config.store.port || 6379, this.config.store.host, {
-                        auth_pass: this.config.store.password
-                    });
+                    let pub = redis(this.config.store);
+                    let sub = redis(this.config.store);
                     this.io.adapter(socketRedis({
                         pubClient: pub,
                         subClient: sub
