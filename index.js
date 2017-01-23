@@ -21,12 +21,29 @@ module.exports = class Sockets extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
             this.io = socketIo();
+            let self = this;
 
             if (this.config.store) {
 
                 if (this.config.store.password) {
+                    this.config.store.retry_strategy = function (options) {
+                        self.log.debug("Reconnecting to session redis in 1 second");
+                        return 1000;
+                    };
+
                     let pub = redis.createClient(this.config.store);
                     let sub = redis.createClient(this.config.store);
+
+
+                    pub.on('error', function (err) {
+                        self.log.error("ERROR in socket redis");
+                        self.log.error(err);
+                    });
+                    sub.on('error', function (err) {
+                        self.log.error("ERROR in socket redis");
+                        self.log.error(err);
+                    });
+
                     this.io.adapter(socketRedis({
                         pubClient: pub,
                         subClient: sub
