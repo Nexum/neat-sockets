@@ -25,8 +25,8 @@ module.exports = class Sockets extends Module {
             if (this.config.store) {
 
                 if (this.config.store.password) {
-                    let pub = redis(this.config.store);
-                    let sub = redis(this.config.store);
+                    let pub = redis.createClient(this.config.store);
+                    let sub = redis.createClient(this.config.store);
                     this.io.adapter(socketRedis({
                         pubClient: pub,
                         subClient: sub
