@@ -54,8 +54,8 @@ module.exports = class Sockets extends Module {
                     this.io.adapter(this.socketRedis);
                 }
 
-                apeStatus.redis(this.socketRedis.pubClient, "session-pub");
-                apeStatus.redis(this.socketRedis.subClient, "session-sub");
+                apeStatus.redis(this.socketRedis.pubClient, "sockets-pub");
+                apeStatus.redis(this.socketRedis.subClient, "sockets-sub");
             }
             resolve(this);
         });
