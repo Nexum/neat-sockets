@@ -8,6 +8,7 @@ const socketRedis = require("socket.io-redis");
 const sharedsession = require("express-socket.io-session");
 const Promise = require("bluebird");
 const redis = require('redis');
+const apeStatus = require('ape-status');
 
 module.exports = class Sockets extends Module {
 
@@ -24,16 +25,14 @@ module.exports = class Sockets extends Module {
             let self = this;
 
             if (this.config.store) {
+                this.config.store.retry_strategy = function (options) {
+                    self.log.debug("Reconnecting to session redis in 1 second");
+                    return 1000;
+                };
 
                 if (this.config.store.password) {
-                    this.config.store.retry_strategy = function (options) {
-                        self.log.debug("Reconnecting to session redis in 1 second");
-                        return 1000;
-                    };
-
                     let pub = redis.createClient(this.config.store);
                     let sub = redis.createClient(this.config.store);
-
 
                     pub.on('error', function (err) {
                         self.log.error("ERROR in socket redis");
@@ -44,13 +43,19 @@ module.exports = class Sockets extends Module {
                         self.log.error(err);
                     });
 
-                    this.io.adapter(socketRedis({
+                    this.socketRedis = socketRedis({
                         pubClient: pub,
                         subClient: sub
-                    }));
+                    });
+                    this.io.adapter(this.socketRedis);
                 } else {
-                    this.io.adapter(socketRedis(this.config.store));
+                    delete this.config.store.password; // just to make sure its not null or anything
+                    this.socketRedis = socketRedis(this.config.store);
+                    this.io.adapter(this.socketRedis);
                 }
+
+                apeStatus.redis(this.socketRedis.pubClient, "session-pub");
+                apeStatus.redis(this.socketRedis.subClient, "session-sub");
             }
             resolve(this);
         });
